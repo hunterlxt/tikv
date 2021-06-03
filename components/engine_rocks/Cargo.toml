@@ -34,8 +34,8 @@ time = "0.1"
 coarsetime = "0.1"
 
 [dependencies.rocksdb]
-git = "https://github.com/Connor1996/rust-rocksdb.git"
-branch = "sst_dump"
+git = "https://github.com/hunterlxt/rust-rocksdb.git"
+branch = "xt/bk-sst"
 package = "rocksdb"
 features = ["encryption", "static_libcpp"]
 
