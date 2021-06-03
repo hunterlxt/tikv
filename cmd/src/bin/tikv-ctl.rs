@@ -2350,7 +2350,7 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, cfg: &TiKvConfig) {
         }
     };
 
-    let stderr_buf = stderr.into_inner();
+    let mut stderr_buf = stderr.into_inner();
     drop(stdout);
     let buffer = Vec::new();
     stderr_buf.read_to_end(&mut buffer).unwrap();
@@ -2388,7 +2388,7 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, cfg: &TiKvConfig) {
             0 => {}
             status => {
                 let mut err = String::new();
-                let stderr_buf = stderr.into_inner();
+                let mut stderr_buf = stderr.into_inner();
                 drop(stdout);
                 stderr_buf.read_to_string(&mut err).unwrap();
                 v1!("failed to run {}:\n{}", args1.join(" "), err);
@@ -2396,8 +2396,7 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, cfg: &TiKvConfig) {
             }
         };
 
-        let stdout_buf = stdout.into_inner();
-        drop(stdout);
+        let mut stdout_buf = stdout.into_inner();
         drop(stderr);
         let mut output = String::new();
         stdout_buf.read_to_string(&mut output).unwrap();
