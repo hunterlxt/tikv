@@ -2329,7 +2329,7 @@ fn run_sst_dump_command(cmd: &ArgMatches<'_>, cfg: &TiKvConfig) {
     engine::rocks::run_sst_dump_tool(&args, &opts);
 }
 
-fn print_bad_ssts(db: &str, manifest: Option<&str>,cfg: &TiKvConfig) {
+fn print_bad_ssts(db: &str, manifest: Option<&str>, cfg: &TiKvConfig) {
     let mut args = vec![
         "sst_dump".to_string(),
         "--output_hex".to_string(),
@@ -2350,10 +2350,11 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>,cfg: &TiKvConfig) {
         }
     };
 
-    let mut corruptions = String::new();
-    stderr.read_to_string(&mut corruptions).unwrap();
-    drop(stderr);
+    let stderr_buf = stderr.into_inner();
     drop(stdout);
+    let buffer = Vec::new();
+    stderr_buf.read_to_end(&mut buffer).unwrap();
+    let mut corruptions = unsafe { String::from_utf8_unchecked(buffer) };
 
     for line in corruptions.lines() {
         v1!("--------------------------------------------------------");
@@ -2387,16 +2388,20 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>,cfg: &TiKvConfig) {
             0 => {}
             status => {
                 let mut err = String::new();
-                stderr.read_to_string(&mut err).unwrap();
+                let stderr_buf = stderr.into_inner();
                 drop(stdout);
+                stderr_buf.read_to_string(&mut err).unwrap();
                 v1!("failed to run {}:\n{}", args1.join(" "), err);
                 std::process::exit(status);
             }
         };
-        let mut output = String::new();
-        stdout.read_to_string(&mut output).unwrap();
+
+        let stdout_buf = stdout.into_inner();
         drop(stdout);
         drop(stderr);
+        let mut output = String::new();
+        stdout_buf.read_to_string(&mut output).unwrap();
+
 
         v1!("\nsst meta:");
         // The output may like this:
