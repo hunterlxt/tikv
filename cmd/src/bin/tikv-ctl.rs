@@ -1767,14 +1767,17 @@ fn main() {
 
     // Initialize configuration and security manager.
     let cfg_path = matches.value_of("config");
-    let cfg = cfg_path.map_or_else(|| {
-        let mut cfg = TiKvConfig::default();
-        cfg.log_level = tikv_util::logger::get_level_by_string("warn").unwrap();
-        cfg
-    }, |path| {
-        let s = fs::read_to_string(&path).unwrap();
-        toml::from_str(&s).unwrap()
-    });
+    let cfg = cfg_path.map_or_else(
+        || {
+            let mut cfg = TiKvConfig::default();
+            cfg.log_level = tikv_util::logger::get_level_by_string("warn").unwrap();
+            cfg
+        },
+        |path| {
+            let s = fs::read_to_string(&path).unwrap();
+            toml::from_str(&s).unwrap()
+        },
+    );
     let mgr = new_security_mgr(&matches);
     cmd::setup::initial_logger(&cfg);
 
@@ -1794,8 +1797,7 @@ fn main() {
         let db = matches.value_of("db").unwrap();
         let manifest = matches.value_of("manifest");
         let pd = matches.value_of("pd").unwrap();
-        let pd_client = get_pd_rpc_client(pd, Arc::clone(&mgr));
-        print_bad_ssts(db, manifest, pd_client, &cfg);
+        print_bad_ssts(db, manifest, &cfg);
         return;
     }
 
@@ -2327,7 +2329,7 @@ fn run_sst_dump_command(cmd: &ArgMatches<'_>, cfg: &TiKvConfig) {
     engine::rocks::run_sst_dump_tool(&args, &opts);
 }
 
-fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &TiKvConfig) {
+fn print_bad_ssts(db: &str, manifest: Option<&str>,cfg: &TiKvConfig) {
     let mut args = vec![
         "sst_dump".to_string(),
         "--output_hex".to_string(),
@@ -2339,7 +2341,7 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &
     let stdout = BufferRedirect::stdout().unwrap();
     let opts = cfg.rocksdb.build_opt();
     match run_and_wait_child_process(|| engine::rocks::run_sst_dump_tool(&args, &opts)).unwrap() {
-        0 => {},
+        0 => {}
         status => {
             let mut err = String::new();
             stderr.read_to_string(&mut err).unwrap();
@@ -2361,11 +2363,11 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &
         let parts = line.splitn(2, ':').collect::<Vec<_>>();
         let path = Path::new(parts[0]);
         match path.extension() {
-            Some(ext) if ext.to_str().unwrap() == "sst" => {},
-            _ => { 
+            Some(ext) if ext.to_str().unwrap() == "sst" => {}
+            _ => {
                 v1!("skip bad line format: {}", line);
                 continue;
-            },
+            }
         }
         let sst_file_number = path.file_stem().unwrap().to_str().unwrap();
         let mut args1 = vec![
@@ -2378,18 +2380,18 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &
         if let Some(manifest_path) = manifest {
             args1.push(format!("--manifest={}", manifest_path));
         }
-       
+
         let mut stdout = BufferRedirect::stdout().unwrap();
         let mut stderr = BufferRedirect::stderr().unwrap();
         match run_and_wait_child_process(|| engine::rocks::run_ldb_tool(&args1, &opts)).unwrap() {
-            0 => {},
+            0 => {}
             status => {
                 let mut err = String::new();
                 stderr.read_to_string(&mut err).unwrap();
                 drop(stdout);
                 v1!("failed to run {}:\n{}", args1.join(" "), err);
                 std::process::exit(status);
-            },
+            }
         };
         let mut output = String::new();
         stdout.read_to_string(&mut output).unwrap();
@@ -2402,7 +2404,11 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &
         // 63:132906243[3555338 .. 3555338]['7A311B40EFCC2CB4C5911ECF3937D728DED26AE53FA5E61BE04F23F2BE54EACC73' seq:3555338, type:1 .. '7A313030302E25CD5F57252E' seq:3555338, type:1] at level 0
         let column_r = Regex::new(r"--------------- (.*) --------------\n(.*)").unwrap();
         if let Some(m) = column_r.captures(&output) {
-            v1!("{} for {}", m.get(2).unwrap().as_str(), m.get(1).unwrap().as_str());
+            v1!(
+                "{} for {}",
+                m.get(2).unwrap().as_str(),
+                m.get(1).unwrap().as_str()
+            );
             let r = Regex::new(r".*\n\d+:\d+\[\d+ .. \d+\]\['(\w*)' seq:\d+, type:\d+ .. '(\w*)' seq:\d+, type:\d+\] at level \d+").unwrap();
             let matches = match r.captures(&output) {
                 None => {
@@ -2415,16 +2421,19 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, pd_client: RpcClient, cfg: &
             let end = from_hex(matches.get(2).unwrap().as_str()).unwrap();
 
             if start.starts_with(&[keys::DATA_PREFIX]) {
-                print_overlap_region(&pd_client, &start[1..], &end[1..]);
+                // print_overlap_region(&pd_client, &start[1..], &end[1..]);
             } else if start.starts_with(&[keys::LOCAL_PREFIX]) {
                 v1!("it isn't easy to handle local data");
 
                 // consider the case that include both meta and user data
                 if end.starts_with(&[keys::DATA_PREFIX]) {
-                    print_overlap_region(&pd_client, &vec![], &end[1..]);
+                    // print_overlap_region(&pd_client, &vec![], &end[1..]);
                 }
             } else {
-                v1!("unexpected key {}, seems raw kv?", hex::encode_upper(&start));
+                v1!(
+                    "unexpected key {}, seems raw kv?",
+                    hex::encode_upper(&start)
+                );
             }
         } else {
             // it is expected when the sst is output of a compaction and the sst isn't added to manifest yet.
@@ -2462,24 +2471,28 @@ fn run_and_wait_child_process(child: impl Fn()) -> Result<i32, String> {
     }
 }
 
-fn print_overlap_region(pd_client: &RpcClient, start: &[u8], end: &[u8]) {
-    let mut key = start.to_vec();
-    v1!("\noverlap region:");
-    loop {
-        let region = match pd_client.get_region_info(&key) {
-            Err(e) => {
-                v1!("can not get the region of key {}: {}", hex::encode_upper(start), e);
-                return;
-            }
-            Ok(r) => r,
-        };
-        v1!("{:?}", region);
-        if region.get_end_key() > end || region.get_end_key().len() == 0 {
-            break;
-        }
-        key = region.get_end_key().to_vec();
-    }
-}
+// fn print_overlap_region(pd_client: &RpcClient, start: &[u8], end: &[u8]) {
+//     let mut key = start.to_vec();
+//     v1!("\noverlap region:");
+//     loop {
+//         let region = match pd_client.get_region_info(&key) {
+//             Err(e) => {
+//                 v1!(
+//                     "can not get the region of key {}: {}",
+//                     hex::encode_upper(start),
+//                     e
+//                 );
+//                 return;
+//             }
+//             Ok(r) => r,
+//         };
+//         v1!("{:?}", region);
+//         if region.get_end_key() > end || region.get_end_key().len() == 0 {
+//             break;
+//         }
+//         key = region.get_end_key().to_vec();
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
