@@ -2352,7 +2352,7 @@ fn print_bad_ssts(db: &str, manifest: Option<&str>, cfg: &TiKvConfig) {
 
     let mut stderr_buf = stderr.into_inner();
     drop(stdout);
-    let buffer = Vec::new();
+    let mut buffer = Vec::new();
     stderr_buf.read_to_end(&mut buffer).unwrap();
     let mut corruptions = unsafe { String::from_utf8_unchecked(buffer) };
 
