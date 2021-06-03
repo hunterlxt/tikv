@@ -2037,7 +2037,7 @@ dependencies = [
 [[package]]
 name = "librocksdb_sys"
 version = "0.1.0"
-source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#4a750876ed0aadca820b0bda25bc4992cefee8de"
+source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#720e6cec7ab75f6f0e52ce6995fdad86be3453df"
 dependencies = [
  "bindgen",
  "bzip2-sys",
@@ -2056,7 +2056,7 @@ dependencies = [
 [[package]]
 name = "libtitan_sys"
 version = "0.0.1"
-source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#4a750876ed0aadca820b0bda25bc4992cefee8de"
+source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#720e6cec7ab75f6f0e52ce6995fdad86be3453df"
 dependencies = [
  "bzip2-sys",
  "cc",
@@ -3418,7 +3418,7 @@ checksum = "cabe4fa914dec5870285fa7f71f602645da47c486e68486d2b4ceb4a343e90ac"
 [[package]]
 name = "rocksdb"
 version = "0.3.0"
-source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#4a750876ed0aadca820b0bda25bc4992cefee8de"
+source = "git+https://github.com/hunterlxt/rust-rocksdb.git?branch=xt/bk-sst#720e6cec7ab75f6f0e52ce6995fdad86be3453df"
 dependencies = [
  "libc",
  "librocksdb_sys",
